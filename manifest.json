@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Majsoul JP Auto Translator",
+  "description": "Auto-translate Mahjong Soul JP with pluggable translation providers, API keys, and local caching.",
+  "version": "0.1.0",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://game.mahjongsoul.com/*",
+    "https://api-free.deepl.com/*",
+    "https://api.deepl.com/*",
+    "https://translation.googleapis.com/*",
+    "https://api.openai.com/*",
+    "https://libretranslate.de/*",
+    "https://translate.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://game.mahjongsoul.com/*"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Majsoul Translator",
+    "default_popup": "src/popup.html"
+  },
+  "options_page": "src/options.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/page-hook.js"
+      ],
+      "matches": [
+        "https://game.mahjongsoul.com/*"
+      ]
+    }
+  ]
+}

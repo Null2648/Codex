@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Majsoul Translator Options</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main>
+    <h1>Majsoul Translator Options</h1>
+
+    <section>
+      <label><input id="enabled" type="checkbox" /> Enable translation</label>
+    </section>
+
+    <section class="grid">
+      <label>Provider
+        <select id="provider">
+          <option value="google_free">Google Free (no API key)</option>
+          <option value="google_cloud">Google Cloud Translation API</option>
+          <option value="deepl">DeepL API</option>
+          <option value="openai">OpenAI API</option>
+          <option value="libre">LibreTranslate</option>
+        </select>
+      </label>
+      <label>Source language (use auto for auto-detect)
+        <input id="sourceLang" value="ja" />
+      </label>
+      <label>Target language
+        <input id="targetLang" value="ko" />
+      </label>
+    </section>
+
+    <section>
+      <h2>Cache</h2>
+      <label><input id="cacheEnabled" type="checkbox" /> Enable local cache</label>
+      <label>Max cache entries
+        <input id="cacheMaxEntries" type="number" min="100" step="100" value="5000" />
+      </label>
+      <button id="clearCache" type="button">Clear cache now</button>
+    </section>
+
+    <section>
+      <h2>Provider credentials</h2>
+      <div class="grid">
+        <label>Google Cloud API Key
+          <input id="googleApiKey" type="password" placeholder="AIza..." />
+        </label>
+        <label>DeepL API Key
+          <input id="deeplApiKey" type="password" />
+        </label>
+        <label><input id="deeplFreeApi" type="checkbox" /> Use DeepL Free endpoint</label>
+        <label>OpenAI API Key
+          <input id="openaiApiKey" type="password" />
+        </label>
+        <label>OpenAI Model
+          <input id="openaiModel" value="gpt-4o-mini" />
+        </label>
+        <label>LibreTranslate Endpoint
+          <input id="libreEndpoint" value="https://libretranslate.de/translate" />
+        </label>
+        <label>LibreTranslate API Key (optional)
+          <input id="libreApiKey" type="password" />
+        </label>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button id="save" type="button">Save settings</button>
+      <p id="status"></p>
+    </div>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>
