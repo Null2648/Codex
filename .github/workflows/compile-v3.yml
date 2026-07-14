@@ -1,6 +1,7 @@
 name: Compile v3
 on:
   push:
+  pull_request:
   workflow_dispatch:
 jobs:
   build:
