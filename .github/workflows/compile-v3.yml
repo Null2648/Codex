@@ -1,6 +1,5 @@
-name: Compile v3
+name: Compile v3.2
 on:
-  push:
   pull_request:
   workflow_dispatch:
 jobs:
@@ -9,7 +8,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Unpack project
-        run: unzip -q v3-source.zip -d project
+        run: |
+          mkdir -p appsrc
+          cat ci/v32_part_* | base64 -d > /tmp/project.zip
+          unzip -q /tmp/project.zip -d appsrc
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -18,9 +20,10 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Compile debug APK
-        working-directory: project
+        working-directory: appsrc
         run: gradle :app:assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: v3-debug-apk
-          path: project/app/build/outputs/apk/debug/app-debug.apk
+          name: library-inventory-v32-debug
+          path: appsrc/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
