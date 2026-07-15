@@ -128,14 +128,12 @@ jobs:
             adb logcat -c
             adb shell am force-stop kr.ac.library.inventory
             adb shell am start -n kr.ac.library.inventory/.MainActivity > launch-result.txt 2>&1
-            sleep 10
+            sleep 20
             adb logcat -d -v threadtime > runtime-logcat.txt
             cat launch-result.txt
-            pid=$(adb shell pidof kr.ac.library.inventory | tr -d '\r')
-            echo "pid=$pid"
-            grep -A 80 -B 10 'Process: kr.ac.library.inventory' runtime-logcat.txt || true
-            if [ -z "$pid" ]; then exit 1; fi
+            grep -E 'Displayed kr.ac.library.inventory/.MainActivity|Process: kr.ac.library.inventory' runtime-logcat.txt || true
             if grep -q 'Process: kr.ac.library.inventory' runtime-logcat.txt; then exit 1; fi
+            if ! grep -q 'Displayed kr.ac.library.inventory/.MainActivity' runtime-logcat.txt; then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
