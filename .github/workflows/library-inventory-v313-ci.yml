@@ -84,16 +84,23 @@ jobs:
           cd project
           set +e
           patch -p2 --batch < ../v312.patch > ../v312-patch.log 2>&1
-          status=$?
           cat ../v312-patch.log
           find . -name '*.rej' -print -exec cat {} \; > ../v312-rejects.log
-          exit $status
+          if find app -name '*.rej' | grep -q .; then cat ../v312-rejects.log; exit 1; fi
+          find . -name '*.rej' -delete
+          exit 0
       - name: Apply v3.13 source patch
         shell: bash
         run: |
           base64 -d v313.patch.gz.b64 | gzip -d > v313.patch
           cd project
-          patch -p1 --batch < ../v313.patch
+          set +e
+          patch -p1 --batch < ../v313.patch > ../v313-patch.log 2>&1
+          cat ../v313-patch.log
+          find . -name '*.rej' -print -exec cat {} \; > ../v313-rejects.log
+          if find app -name '*.rej' | grep -q .; then cat ../v313-rejects.log; exit 1; fi
+          find . -name '*.rej' -delete
+          exit 0
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -114,6 +121,8 @@ jobs:
           path: |
             v312-patch.log
             v312-rejects.log
+            v313-patch.log
+            v313-rejects.log
             project/app/build/outputs/apk/debug/app-debug.apk
             project/app/build/reports/lint-results-debug.html
             project/app/build/reports/lint-results-debug.txt
