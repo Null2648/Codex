@@ -1,0 +1,21 @@
+--- a/app/src/main/java/kr/ac/library/inventory/MainActivity.java
++++ b/app/src/main/java/kr/ac/library/inventory/MainActivity.java
+@@ -593,7 +593,18 @@
+     private void appendHardwareChar(char c){long now=System.currentTimeMillis();if(hardwareBuffer.length()>0&&lastHardwareKeyAt>0&&now-lastHardwareKeyAt>INTER_SCAN_GAP_MS)finalizeBufferedScan(false);hardwareBuffer.append(c);lastHardwareKeyAt=now;updateScanInputFromBuffer();handler.removeCallbacks(idleCommit);handler.postDelayed(idleCommit,SCANNER_IDLE_MS);}
+     private void updateScanInputFromBuffer(){if(scanInput==null)return;scanInput.setText(hardwareBuffer.toString());scanInput.setSelection(scanInput.length());}
+     private void finalizeBufferedScan(boolean fromEnter){handler.removeCallbacks(idleCommit);if(scanInput==null)return;String raw=hardwareBuffer.length()>0?hardwareBuffer.toString():scanInput.getText().toString();hardwareBuffer.setLength(0);lastHardwareKeyAt=0;scanInput.setText("");processScanPayload(raw);}
+-    private void submitEditText(){handler.removeCallbacks(idleCommit);if(scanInput==null)return;String raw=hardwareBuffer.length()>0?hardwareBuffer.toString():scanInput.getText().toString();hardwareBuffer.setLength(0);lastHardwareKeyAt=0;scanInput.setText("");processScanPayload(raw);}
++    private void submitEditText(){
++        handler.removeCallbacks(idleCommit);if(scanInput==null)return;
++        boolean fromHardware=hardwareBuffer.length()>0;
++        String raw=fromHardware?hardwareBuffer.toString():scanInput.getText().toString();
++        hardwareBuffer.setLength(0);lastHardwareKeyAt=0;scanInput.setText("");
++        if(raw==null||raw.trim().isEmpty()){focusScanner();return;}
++        if(fromHardware){processScanPayload(raw);return;}
++        String reg=BarcodeNormalizer.normalize(raw);
++        if(reg.isEmpty()){message("직접 입력 확인","유효한 등록번호를 입력하세요.");return;}
++        reviewManualInput(raw,reg);
++    }
+ 
+     private void processScanPayload(String raw){if(raw==null)return;String normalized=BarcodeNormalizer.normalize(raw);if(normalized.isEmpty()){focusScanner();return;}List<String>parts=splitJoinedPayload(normalized);if(parts.size()>1){for(String part:parts)processCandidate(part,false);Toast.makeText(this,"붙어 들어온 등록번호 "+parts.size()+"건을 자동 분리했습니다.",Toast.LENGTH_LONG).show();return;}processCandidate(normalized,false);}
+ 
