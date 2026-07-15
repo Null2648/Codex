@@ -84,7 +84,6 @@ jobs:
           cd project
           set +e
           patch -p2 --batch < ../v312.patch > ../v312-patch.log 2>&1
-          cat ../v312-patch.log
           find . -name '*.rej' -print -exec cat {} \; > ../v312-rejects.log
           if find app -name '*.rej' | grep -q .; then cat ../v312-rejects.log; exit 1; fi
           find . -name '*.rej' -delete
@@ -92,15 +91,25 @@ jobs:
       - name: Apply v3.13 source patch
         shell: bash
         run: |
-          base64 -d v313.patch.gz.b64 | gzip -d > v313.patch
-          cd project
           set +e
+          : > v313-decode.log
+          wc -c v313.patch.gz.b64 >> v313-decode.log 2>&1
+          base64 -d v313.patch.gz.b64 > v313.patch.gz 2>> v313-decode.log
+          b64_status=$?
+          echo "base64_status=$b64_status" >> v313-decode.log
+          gzip -t v313.patch.gz >> v313-decode.log 2>&1
+          gzip_status=$?
+          echo "gzip_status=$gzip_status" >> v313-decode.log
+          if [ "$b64_status" -ne 0 ] || [ "$gzip_status" -ne 0 ]; then cat v313-decode.log; exit 1; fi
+          gzip -dc v313.patch.gz > v313.patch
+          wc -c v313.patch >> v313-decode.log
+          cd project
           patch -p1 --batch < ../v313.patch > ../v313-patch.log 2>&1
-          cat ../v313-patch.log
+          patch_status=$?
           find . -name '*.rej' -print -exec cat {} \; > ../v313-rejects.log
           if find app -name '*.rej' | grep -q .; then cat ../v313-rejects.log; exit 1; fi
           find . -name '*.rej' -delete
-          exit 0
+          exit $patch_status
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -121,6 +130,7 @@ jobs:
           path: |
             v312-patch.log
             v312-rejects.log
+            v313-decode.log
             v313-patch.log
             v313-rejects.log
             project/app/build/outputs/apk/debug/app-debug.apk
