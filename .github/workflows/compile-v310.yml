@@ -1,0 +1,54 @@
+name: Compile library inventory v3.12
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild v3.11 project and overlay v3.12 files
+        run: |
+          base64 -d v311-exact-source.b64 > v311-exact-source.zip
+          echo '4f6284bad6eff9fabb4036459b5db0dec524fe60e08c9b2d0d52ba4db0924b4a  v311-exact-source.zip' | sha256sum -c -
+          unzip -t v311-exact-source.zip
+          mkdir project
+          unzip -q v311-exact-source.zip -d project
+          cat v312ov-00.txt v312ov-01.txt v312ov-02.txt v312ov-03.txt | base64 -d > v312-overlay.zip
+          unzip -t v312-overlay.zip
+          unzip -o -q v312-overlay.zip -d project
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compile debug APK
+        working-directory: project
+        shell: bash
+        run: |
+          set +e
+          gradle :app:assembleDebug --stacktrace --console=plain > compile-console.log 2>&1
+          status=$?
+          tail -n 300 compile-console.log
+          exit $status
+      - name: Run Android lint
+        working-directory: project
+        shell: bash
+        run: |
+          set +e
+          gradle :app:lintDebug --console=plain > lint-console.log 2>&1
+          status=$?
+          tail -n 240 lint-console.log
+          exit $status
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: library-inventory-v312-validation
+          path: |
+            project/app/build/outputs/apk/debug/app-debug.apk
+            project/app/build/reports/lint-results-debug.html
+            project/app/build/reports/lint-results-debug.txt
+            project/compile-console.log
+            project/lint-console.log
