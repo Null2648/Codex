@@ -77,18 +77,12 @@ jobs:
               if old in s: s = s.replace(old, new, 1)
               elif new not in s: raise SystemExit('final v3.11 UI source missing: ' + old[:60])
           p.write_text(s, encoding='utf-8')
-      - name: Apply v3.12 source patch and preserve rejects
+      - name: Apply v3.12 source patch
         shell: bash
         run: |
           cat v312p-00.txt v312p-01.txt v312p-02.txt v312p-03.txt | base64 -d | gzip -d > v312.patch
           cd project
-          set +e
-          patch -p1 --batch < ../v312.patch > ../v312-patch.log 2>&1
-          status=$?
-          cat ../v312-patch.log
-          find . -name '*.rej' -print -exec cat {} \; > ../v312-rejects.log
-          echo "patch_status=$status" >> ../v312-rejects.log
-          exit 0
+          patch -p2 --batch < ../v312.patch
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -107,9 +101,6 @@ jobs:
         with:
           name: library-inventory-v312-validation
           path: |
-            v312-patch.log
-            v312-rejects.log
-            project/**/*.rej
             project/app/build/outputs/apk/debug/app-debug.apk
             project/app/build/reports/lint-results-debug.html
             project/app/build/reports/lint-results-debug.txt
