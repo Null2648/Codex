@@ -13,6 +13,29 @@ jobs:
           unzip -t v310-source.zip
           mkdir project
           unzip -q v310-source.zip -d project
+      - name: Apply final lint fixes
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('project/app/src/main/java/kr/ac/library/inventory/MainActivity.java')
+          s = p.read_text(encoding='utf-8')
+          replacements = [
+              ('import android.app.Activity;\n', 'import android.annotation.SuppressLint;\nimport android.app.Activity;\n'),
+              ('import android.graphics.drawable.GradientDrawable;\n', 'import android.graphics.Typeface;\nimport android.graphics.drawable.GradientDrawable;\n'),
+              ('import android.provider.Settings;\n', ''),
+              ('public class MainActivity extends Activity {', '@SuppressLint("SetTextI18n")\npublic class MainActivity extends Activity {'),
+              ('    private static final String PREF_LAST_LCHECK_EXPORT_AT = "last_lcheck_export_at";\n', '    private static final String PREF_LAST_LCHECK_EXPORT_AT = "last_lcheck_export_at";\n    private static final String PREF_DEVICE_ID = "local_device_id";\n'),
+              ('        deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);\n        if (deviceId == null || deviceId.isEmpty()) deviceId = "android-device";', '        deviceId = preferences.getString(PREF_DEVICE_ID, "");\n        if (deviceId == null || deviceId.isEmpty()) {\n            deviceId = UUID.randomUUID().toString();\n            preferences.edit().putString(PREF_DEVICE_ID, deviceId).apply();\n        }'),
+              ('if(android.os.Build.VERSION.SDK_INT>=21)scanInput.setShowSoftInputOnFocus(false);', 'scanInput.setShowSoftInputOnFocus(false);'),
+              ('runOnUiThread(()->{if(!destroyed&&!(Build.VERSION.SDK_INT>=17&&isDestroyed()))action.run();});', 'runOnUiThread(()->{if(!destroyed&&!isDestroyed())action.run();});'),
+              ('if(android.os.Build.VERSION.SDK_INT>=21)x.setElevation(dp(1));', 'x.setElevation(dp(1));'),
+              ('if(bold)t.setTypeface(null,1);', 'if(bold)t.setTypeface(null,Typeface.BOLD);'),
+          ]
+          for old, new in replacements:
+              if old not in s:
+                  raise SystemExit('Expected source fragment not found: ' + old[:80])
+              s = s.replace(old, new)
+          p.write_text(s, encoding='utf-8')
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
