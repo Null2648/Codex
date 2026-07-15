@@ -82,7 +82,12 @@ jobs:
         run: |
           cat v312p-00.txt v312p-01.txt v312p-02.txt v312p-03.txt | base64 -d | gzip -d > v312.patch
           cd project
-          patch -p2 --batch < ../v312.patch
+          set +e
+          patch -p2 --batch < ../v312.patch > ../v312-patch.log 2>&1
+          status=$?
+          cat ../v312-patch.log
+          find . -name '*.rej' -print -exec cat {} \; > ../v312-rejects.log
+          exit $status
       - name: Apply v3.13 source patch
         shell: bash
         run: |
@@ -107,6 +112,8 @@ jobs:
         with:
           name: library-inventory-v313-validation
           path: |
+            v312-patch.log
+            v312-rejects.log
             project/app/build/outputs/apk/debug/app-debug.apk
             project/app/build/reports/lint-results-debug.html
             project/app/build/reports/lint-results-debug.txt
