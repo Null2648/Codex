@@ -42,6 +42,7 @@ jobs:
           cat v311fix-0.txt v311fix-1.txt v311fix-2.txt v311fix-3.txt | base64 -d | gzip -d > v311.patch
           cd project
           patch -p1 < ../v311.patch
+          patch -p1 < ../v311-extra.patch
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
