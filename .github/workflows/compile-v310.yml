@@ -8,11 +8,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Rebuild exact v3.11 project
+        shell: bash
         run: |
-          base64 -d v311-exact-source.b64 > v311-exact-source.zip
-          unzip -t v311-exact-source.zip
-          mkdir project
-          unzip -q v311-exact-source.zip -d project
+          set +e
+          : > rebuild-console.log
+          base64 -d v311-exact-source.b64 > v311-exact-source.zip 2>> rebuild-console.log
+          echo "base64_status=$?" >> rebuild-console.log
+          ls -lh v311-exact-source.b64 v311-exact-source.zip >> rebuild-console.log 2>&1
+          sha256sum v311-exact-source.zip >> rebuild-console.log 2>&1
+          unzip -t v311-exact-source.zip >> rebuild-console.log 2>&1
+          status=$?
+          echo "unzip_test_status=$status" >> rebuild-console.log
+          if [ "$status" -eq 0 ]; then
+            mkdir project
+            unzip -q v311-exact-source.zip -d project >> rebuild-console.log 2>&1
+            status=$?
+          fi
+          cat rebuild-console.log
+          exit $status
       - name: Apply v3.12 source patch
         shell: bash
         run: |
@@ -49,6 +62,7 @@ jobs:
         with:
           name: library-inventory-v312-exact-validation
           path: |
+            rebuild-console.log
             project/app/build/outputs/apk/debug/app-debug.apk
             project/app/build/reports/lint-results-debug.html
             project/app/build/reports/lint-results-debug.txt
