@@ -44,6 +44,7 @@ jobs:
           patch -p1 < ../v311.patch
           patch -p1 < ../v311-extra.patch
           patch -p1 < ../v311-extra2.patch
+          patch -p1 < ../v311-extra3.patch
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
