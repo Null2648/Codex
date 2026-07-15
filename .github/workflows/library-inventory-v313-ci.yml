@@ -82,24 +82,13 @@ jobs:
         run: |
           cat v312p-00.txt v312p-01.txt v312p-02.txt v312p-03.txt | base64 -d | gzip -d > v312.patch
           cd project
-          set +e
-          patch -p1 --batch < ../v312.patch > ../v312-patch.log 2>&1
-          find . -name '*.rej' -print -exec cat {} \; > ../v312-rejects.log
-          if find app -name '*.rej' | grep -q .; then cat ../v312-rejects.log; exit 1; fi
-          find . -name '*.rej' -delete
-          exit 0
+          patch -p2 --batch < ../v312.patch
       - name: Apply v3.13 source patch
         shell: bash
         run: |
           base64 -d v313.patch.gz.b64 | gzip -d > v313.patch
           cd project
-          set +e
-          patch -p1 --batch < ../v313.patch > ../v313-patch.log 2>&1
-          status=$?
-          cat ../v313-patch.log
-          find . -name '*.rej' -print -exec cat {} \; > ../v313-rejects.log
-          if find app -name '*.rej' | grep -q .; then cat ../v313-rejects.log; exit 1; fi
-          exit $status
+          patch -p1 --batch < ../v313.patch
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -118,10 +107,6 @@ jobs:
         with:
           name: library-inventory-v313-validation
           path: |
-            v312-patch.log
-            v312-rejects.log
-            v313-patch.log
-            v313-rejects.log
             project/app/build/outputs/apk/debug/app-debug.apk
             project/app/build/reports/lint-results-debug.html
             project/app/build/reports/lint-results-debug.txt
