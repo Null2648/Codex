@@ -1,4 +1,4 @@
-name: Compile library inventory v3.11
+name: Compile library inventory v3.11 exact
 on:
   pull_request:
   workflow_dispatch:
@@ -7,59 +7,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rebuild v3.10 source archive
+      - name: Rebuild exact sanitized project
         run: |
-          cat v310-part-00.txt v310-part-01.txt v310-part-02.txt v310-part-03.txt | base64 -d > v310-source.zip
-          unzip -t v310-source.zip
+          base64 -d v311-exact-source.b64 > v311-exact-source.zip
+          echo '4f6284bad6eff9fabb4036459b5db0dec524fe60e08c9b2d0d52ba4db0924b4a  v311-exact-source.zip' | sha256sum -c -
+          unzip -t v311-exact-source.zip
           mkdir project
-          unzip -q v310-source.zip -d project
-      - name: Apply v3.10 final lint fixes
-        shell: python
-        run: |
-          from pathlib import Path
-          p = Path('project/app/src/main/java/kr/ac/library/inventory/MainActivity.java')
-          s = p.read_text(encoding='utf-8')
-          replacements = [
-              ('import android.app.Activity;\n', 'import android.annotation.SuppressLint;\nimport android.app.Activity;\n'),
-              ('import android.graphics.drawable.GradientDrawable;\n', 'import android.graphics.Typeface;\nimport android.graphics.drawable.GradientDrawable;\n'),
-              ('import android.provider.Settings;\n', ''),
-              ('public class MainActivity extends Activity {', '@SuppressLint("SetTextI18n")\npublic class MainActivity extends Activity {'),
-              ('    private static final String PREF_LAST_LCHECK_EXPORT_AT = "last_lcheck_export_at";\n', '    private static final String PREF_LAST_LCHECK_EXPORT_AT = "last_lcheck_export_at";\n    private static final String PREF_DEVICE_ID = "local_device_id";\n'),
-              ('        deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);\n        if (deviceId == null || deviceId.isEmpty()) deviceId = "android-device";', '        deviceId = preferences.getString(PREF_DEVICE_ID, "");\n        if (deviceId == null || deviceId.isEmpty()) {\n            deviceId = UUID.randomUUID().toString();\n            preferences.edit().putString(PREF_DEVICE_ID, deviceId).apply();\n        }'),
-              ('if(android.os.Build.VERSION.SDK_INT>=21)scanInput.setShowSoftInputOnFocus(false);', 'scanInput.setShowSoftInputOnFocus(false);'),
-              ('runOnUiThread(()->{if(!destroyed&&!(Build.VERSION.SDK_INT>=17&&isDestroyed()))action.run();});', 'runOnUiThread(()->{if(!destroyed&&!isDestroyed())action.run();});'),
-              ('if(android.os.Build.VERSION.SDK_INT>=21)x.setElevation(dp(1));', 'x.setElevation(dp(1));'),
-              ('if(bold)t.setTypeface(null,1);', 'if(bold)t.setTypeface(null,Typeface.BOLD);'),
-          ]
-          for old, new in replacements:
-              if old not in s:
-                  raise SystemExit('Expected source fragment not found: ' + old[:80])
-              s = s.replace(old, new)
-          p.write_text(s, encoding='utf-8')
-      - name: Apply v3.11 source patch
-        shell: bash
-        run: |
-          cat v311fix-0.txt v311fix-1.txt v311fix-2.txt v311fix-3.txt | base64 -d | gzip -d > v311.patch
-          cd project
-          patch -p1 < ../v311.patch
-          patch -p1 < ../v311-extra.patch
-          patch -p1 < ../v311-extra2.patch
-      - name: Apply final v3.11 UI text
-        shell: python
-        run: |
-          from pathlib import Path
-          p = Path('project/app/src/main/java/kr/ac/library/inventory/MainActivity.java')
-          s = p.read_text(encoding='utf-8')
-          replacements = [
-              ('스캐너 입력은 자동 판정합니다. 직접 입력은 오타 방지를 위해 등록 전 확인하며, 짧거나 의심스러운 번호는 확인 필요로 보류합니다.', '스캐너 입력은 자동 판정합니다. 버튼·붙여넣기·직접 입력은 사람 입력으로 검토하며, 짧거나 의심스러운 번호는 확인 필요로 보류합니다.'),
-              ('TextView recentTitle=text("최근 스캔",15,true);', 'TextView recentTitle=text("최근 스캔 · 항목을 누르면 수정·삭제·이동",15,true);'),
-              ('기록 탭 전체 스크롤, 점검 카드 관리, 내보내기 이력 표시는 v3.10.0 이상에서 지원합니다.', '직접 입력 재확인과 점검 기록 수정·삭제 기능은 v3.11.0 이상에서 지원합니다.'),
-          ]
-          for old, new in replacements:
-              if old not in s:
-                  raise SystemExit('Expected UI source fragment not found: ' + old[:80])
-              s = s.replace(old, new, 1)
-          p.write_text(s, encoding='utf-8')
+          unzip -q v311-exact-source.zip -d project
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -88,7 +42,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: library-inventory-v311-validation
+          name: library-inventory-v311-exact-validation
           path: |
             project/app/build/outputs/apk/debug/app-debug.apk
             project/app/build/reports/lint-results-debug.html
