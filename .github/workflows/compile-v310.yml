@@ -39,7 +39,7 @@ jobs:
       - name: Apply v3.11 source patch
         shell: bash
         run: |
-          base64 -d v311.patch.gz.b64 | gzip -d > v311.patch
+          cat v311fix-0.txt v311fix-1.txt v311fix-2.txt v311fix-3.txt | base64 -d | gzip -d > v311.patch
           cd project
           patch -p1 < ../v311.patch
       - uses: actions/setup-java@v4
