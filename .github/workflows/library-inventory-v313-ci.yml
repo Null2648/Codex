@@ -97,7 +97,6 @@ jobs:
           gzip -dc v313.patch.gz > v313.patch
           cd project
           patch -p1 --batch < ../v313.patch > ../v313-patch.log 2>&1
-          status=$?
           find . -name '*.rej' -print -exec cat {} \; > ../v313-rejects.log
           cat ../v313-patch.log
           if find app -name '*.rej' | grep -q .; then cat ../v313-rejects.log; exit 1; fi
@@ -128,15 +127,15 @@ jobs:
             adb install -r project/app/build/outputs/apk/debug/app-debug.apk
             adb logcat -c
             adb shell am force-stop kr.ac.library.inventory
-            adb shell am start -W -n kr.ac.library.inventory/.MainActivity > launch-result.txt 2>&1
-            sleep 5
+            adb shell am start -n kr.ac.library.inventory/.MainActivity > launch-result.txt 2>&1
+            sleep 10
             adb logcat -d -v threadtime > runtime-logcat.txt
             cat launch-result.txt
-            grep -A 80 -B 10 -E 'FATAL EXCEPTION|AndroidRuntime|SQLiteException|IllegalStateException' runtime-logcat.txt || true
             pid=$(adb shell pidof kr.ac.library.inventory | tr -d '\r')
             echo "pid=$pid"
+            grep -A 80 -B 10 'Process: kr.ac.library.inventory' runtime-logcat.txt || true
             if [ -z "$pid" ]; then exit 1; fi
-            if grep -q 'FATAL EXCEPTION' runtime-logcat.txt; then exit 1; fi
+            if grep -q 'Process: kr.ac.library.inventory' runtime-logcat.txt; then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
