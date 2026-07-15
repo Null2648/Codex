@@ -1,4 +1,4 @@
-name: Compile library inventory v3.13
+name: Compile and launch library inventory v3.13
 on:
   pull_request:
   workflow_dispatch:
@@ -92,24 +92,11 @@ jobs:
         shell: bash
         run: |
           set +e
-          : > v313-decode.log
-          wc -c v313.patch.gz.b64 >> v313-decode.log 2>&1
-          base64 -d v313.patch.gz.b64 > v313.patch.gz 2>> v313-decode.log
-          b64_status=$?
-          echo "base64_status=$b64_status" >> v313-decode.log
-          gzip -t v313.patch.gz >> v313-decode.log 2>&1
-          gzip_status=$?
-          echo "gzip_status=$gzip_status" >> v313-decode.log
-          if [ "$b64_status" -ne 0 ] || [ "$gzip_status" -ne 0 ]; then cat v313-decode.log; exit 1; fi
+          base64 -d v313.patch.gz.b64 > v313.patch.gz
+          gzip -t v313.patch.gz
           gzip -dc v313.patch.gz > v313.patch
-          wc -c v313.patch >> v313-decode.log
           cd project
-          patch -p1 --batch < ../v313.patch > ../v313-patch.log 2>&1
-          patch_status=$?
-          find . -name '*.rej' -print -exec cat {} \; > ../v313-rejects.log
-          if find app -name '*.rej' | grep -q .; then cat ../v313-rejects.log; exit 1; fi
-          find . -name '*.rej' -delete
-          exit $patch_status
+          patch -p1 --batch < ../v313.patch
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -123,16 +110,34 @@ jobs:
       - name: Run Android lint
         working-directory: project
         run: gradle :app:lintDebug --console=plain
+      - name: Launch APK in emulator and capture crash
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            set +e
+            adb install -r project/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell am force-stop kr.ac.library.inventory
+            adb shell am start -W -n kr.ac.library.inventory/.MainActivity > launch-result.txt 2>&1
+            sleep 5
+            adb logcat -d -v threadtime > runtime-logcat.txt
+            cat launch-result.txt
+            grep -A 80 -B 10 -E 'FATAL EXCEPTION|AndroidRuntime|SQLiteException|IllegalStateException' runtime-logcat.txt || true
+            pid=$(adb shell pidof kr.ac.library.inventory | tr -d '\r')
+            echo "pid=$pid"
+            if [ -z "$pid" ]; then exit 1; fi
+            if grep -q 'FATAL EXCEPTION' runtime-logcat.txt; then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: library-inventory-v313-validation
+          name: library-inventory-v313-runtime-validation
           path: |
-            v312-patch.log
-            v312-rejects.log
-            v313-decode.log
-            v313-patch.log
-            v313-rejects.log
+            launch-result.txt
+            runtime-logcat.txt
             project/app/build/outputs/apk/debug/app-debug.apk
             project/app/build/reports/lint-results-debug.html
             project/app/build/reports/lint-results-debug.txt
