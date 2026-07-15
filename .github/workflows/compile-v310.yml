@@ -1,0 +1,29 @@
+name: Compile library inventory v3.10
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild source archive
+        run: |
+          cat v310-part-00.txt v310-part-01.txt v310-part-02.txt v310-part-03.txt | base64 -d > v310-source.zip
+          unzip -t v310-source.zip
+          mkdir project
+          unzip -q v310-source.zip -d project
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compile debug APK
+        working-directory: project
+        run: gradle :app:assembleDebug --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: library-inventory-v310-debug
+          path: project/app/build/outputs/apk/debug/app-debug.apk
