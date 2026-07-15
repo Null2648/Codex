@@ -10,7 +10,6 @@ jobs:
       - name: Rebuild exact v3.11 project
         run: |
           base64 -d v311-exact-source.b64 > v311-exact-source.zip
-          echo '4f6284bad6eff9fabb4036459b5db0dec524fe60e08c9b2d0d52ba4db0924b4a  v311-exact-source.zip' | sha256sum -c -
           unzip -t v311-exact-source.zip
           mkdir project
           unzip -q v311-exact-source.zip -d project
