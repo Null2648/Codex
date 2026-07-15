@@ -7,16 +7,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rebuild v3.11 project and apply v3.12 patch
+      - name: Rebuild v3.11 project and overlay v3.12 files
         run: |
           base64 -d v311-exact-source.b64 > v311-exact-source.zip
           echo '4f6284bad6eff9fabb4036459b5db0dec524fe60e08c9b2d0d52ba4db0924b4a  v311-exact-source.zip' | sha256sum -c -
           unzip -t v311-exact-source.zip
           mkdir project
           unzip -q v311-exact-source.zip -d project
-          base64 -d v312.patch.gz.b64 | gzip -d > v312.patch
-          cd project
-          patch -p1 < ../v312.patch
+          cat v312ov-00.txt v312ov-01.txt v312ov-02.txt v312ov-03.txt | base64 -d > v312-overlay.zip
+          unzip -t v312-overlay.zip
+          unzip -o -q v312-overlay.zip -d project
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
