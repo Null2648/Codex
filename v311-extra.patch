@@ -1,0 +1,10 @@
+--- a/app/src/main/java/kr/ac/library/inventory/MainActivity.java
++++ b/app/src/main/java/kr/ac/library/inventory/MainActivity.java
+@@ -1587,6 +1587,7 @@
+     private TextView smallStat(LinearLayout parent,String label){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setGravity(Gravity.CENTER);TextView l=text(label,12,false);l.setTextColor(C_SUB);TextView v=text("0",18,true);c.addView(l);c.addView(v);parent.addView(c,new LinearLayout.LayoutParams(0,-2,1));return v;}
+     private TextView text(String s,int sp,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextSize(sp);t.setTextColor(C_TEXT);if(bold)t.setTypeface(null,Typeface.BOLD);return t;}
+     private TextView label(String s){TextView t=text(s,13,true);t.setPadding(0,dp(8),0,dp(3));return t;}
++    private View space(int heightDp){View v=new View(this);v.setLayoutParams(new LinearLayout.LayoutParams(1,dp(heightDp)));return v;}
+     private Button primaryButton(String s,View.OnClickListener l){Button b=baseButton(s,l);b.setTextColor(Color.WHITE);b.setBackground(rounded(C_PRIMARY,12));return b;}
+     private Button compactButton(String s,View.OnClickListener l){Button b=baseButton(s,l);b.setTextColor(C_PRIMARY);b.setBackground(rounded(C_PRIMARY_LIGHT,12));return b;}
+     private Button baseButton(String s,View.OnClickListener l){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(14);b.setMinHeight(dp(48));b.setMinimumHeight(dp(48));b.setPadding(dp(10),dp(10),dp(10),dp(10));b.setOnClickListener(l);return b;}
