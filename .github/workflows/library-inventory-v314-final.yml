@@ -9,6 +9,28 @@ jobs:
       - uses: actions/checkout@v4
       - name: Rebuild exact v3.14 project
         run: bash scripts/rebuild-v314.sh
+      - name: Restore launcher icon
+        shell: bash
+        run: |
+          mkdir -p project/app/src/main/res/drawable-nodpi
+          cat v314icon-small-00.txt v314icon-small-01.txt v314icon-small-02.txt | base64 -d > project/app/src/main/res/drawable-nodpi/ic_launcher.png
+          rm -rf project/app/src/main/res/mipmap-*
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('project/app/src/main/AndroidManifest.xml')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('android:icon="@mipmap/ic_launcher"','android:icon="@drawable/ic_launcher"')
+          s=s.replace('android:roundIcon="@mipmap/ic_launcher_round"','android:roundIcon="@drawable/ic_launcher"')
+          if 'android:icon=' not in s:
+              s=s.replace('<application\n','<application\n        android:icon="@drawable/ic_launcher"\n        android:roundIcon="@drawable/ic_launcher"\n',1)
+          elif 'android:roundIcon=' not in s:
+              s=s.replace('android:icon="@drawable/ic_launcher"','android:icon="@drawable/ic_launcher"\n        android:roundIcon="@drawable/ic_launcher"',1)
+          s=s.replace('android:label="장서점검"','android:label="@string/app_name"')
+          p.write_text(s,encoding='utf-8')
+          PY
+          file project/app/src/main/res/drawable-nodpi/ic_launcher.png
+          test "$(sha256sum project/app/src/main/res/drawable-nodpi/ic_launcher.png | cut -d' ' -f1)" = "557ffe11301db6555e1ed010109cb6f9537afce96ed867526dd996b751208ae7"
+          grep -q 'android:icon="@drawable/ic_launcher"' project/app/src/main/AndroidManifest.xml
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -22,6 +44,10 @@ jobs:
       - name: Run Android lint
         working-directory: project
         run: gradle :app:lintDebug --console=plain
+      - name: Verify packaged icon
+        run: |
+          unzip -l project/app/build/outputs/apk/debug/app-debug.apk | grep -E 'res/.*/ic_launcher|res/drawable.*ic_launcher'
+          ! grep -q 'MissingApplicationIcon' project/app/build/reports/lint-results-debug.txt
       - name: Launch APK in emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
