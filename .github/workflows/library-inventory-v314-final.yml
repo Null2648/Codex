@@ -1,0 +1,52 @@
+name: Validate library inventory v3.14 final
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild exact v3.14 project
+        run: bash scripts/rebuild-v314.sh
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compile debug APK
+        working-directory: project
+        run: gradle :app:assembleDebug --stacktrace --console=plain
+      - name: Run Android lint
+        working-directory: project
+        run: gradle :app:lintDebug --console=plain
+      - name: Launch APK in emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            set -e
+            adb install -r project/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell am force-stop kr.ac.library.inventory
+            adb shell am start -n kr.ac.library.inventory/.MainActivity > launch-result.txt
+            sleep 20
+            adb logcat -d -v threadtime > runtime-logcat.txt
+            grep -E 'Displayed kr.ac.library.inventory/.MainActivity|Process: kr.ac.library.inventory' runtime-logcat.txt || true
+            ! grep -q 'Process: kr.ac.library.inventory' runtime-logcat.txt
+            grep -q 'Displayed kr.ac.library.inventory/.MainActivity' runtime-logcat.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: library-inventory-v314-final
+          path: |
+            launch-result.txt
+            runtime-logcat.txt
+            project/app/build/outputs/apk/debug/app-debug.apk
+            project/app/build/reports/lint-results-debug.html
+            project/app/build/reports/lint-results-debug.txt
