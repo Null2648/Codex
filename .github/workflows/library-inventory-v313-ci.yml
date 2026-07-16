@@ -1,4 +1,4 @@
-name: Compile and launch library inventory v3.13
+name: Compile and launch library inventory v3.14
 on:
   pull_request:
   workflow_dispatch:
@@ -102,6 +102,21 @@ jobs:
           if find app -name '*.rej' | grep -q .; then cat ../v313-rejects.log; exit 1; fi
           find . -name '*.rej' -delete
           exit 0
+      - name: Apply v3.14 source patch
+        shell: bash
+        run: |
+          set +e
+          base64 -d v314.patch.gz.b64 > v314.patch.gz
+          gzip -t v314.patch.gz || exit 1
+          gzip -dc v314.patch.gz > v314.patch
+          cd project
+          patch -p1 --batch < ../v314.patch > ../v314-patch.log 2>&1
+          status=$?
+          find . -name '*.rej' -print -exec cat {} \; > ../v314-rejects.log
+          cat ../v314-patch.log
+          if find app -name '*.rej' | grep -q .; then cat ../v314-rejects.log; exit 1; fi
+          find . -name '*.rej' -delete
+          exit $status
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -137,10 +152,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: library-inventory-v313-runtime-validation
+          name: library-inventory-v314-runtime-validation
           path: |
-            v313-patch.log
-            v313-rejects.log
+            v314-patch.log
+            v314-rejects.log
             launch-result.txt
             runtime-logcat.txt
             project/app/build/outputs/apk/debug/app-debug.apk
