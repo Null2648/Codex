@@ -106,7 +106,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          base64 -d v314.patch.gz.b64 > v314.patch.gz
+          cat v314p-00.txt v314p-01.txt v314p-02.txt v314p-03.txt v314p-04.txt | base64 -d > v314.patch.gz
           gzip -t v314.patch.gz || exit 1
           gzip -dc v314.patch.gz > v314.patch
           cd project
