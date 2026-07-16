@@ -1,0 +1,24 @@
+diff --git a/app/src/main/java/kr/ac/library/inventory/MainActivity.java b/app/src/main/java/kr/ac/library/inventory/MainActivity.java
+index 1411f10..1e368db 100644
+--- a/app/src/main/java/kr/ac/library/inventory/MainActivity.java
++++ b/app/src/main/java/kr/ac/library/inventory/MainActivity.java
+@@ -1123,13 +1123,17 @@ public class MainActivity extends Activity {
+ 
+     private void performBulkShelfMove(List<Long> sources,long targetShelfId,String targetLabel,boolean deleteOnly){
+         ProgressDialog p=progress(deleteOnly?"선택 서가 삭제":"서가 이동·합치기","장서 배정과 작업 이력을 정리하고 있습니다.");
+-        setBusyState(true);String inspector=currentInspector();long sessionId=currentSessionId;
++        setBusyState(true);String inspector=currentInspector();long sessionId=currentSessionId;long selectedCurrentShelf=currentShelfId;
+         worker.execute(()->{
+             try{
+                 DbHelper.BulkShelfResult result=db.moveShelves(sessionId,sources,targetShelfId,inspector,deviceId);
+                 postUi(()->{
+                     setBusyState(false);p.dismiss();
+-                    if(sources.contains(currentShelfId)){currentShelfId=targetShelfId;db.setCurrentShelf(currentSessionId,targetShelfId);}
++                    if(sources.contains(selectedCurrentShelf)){
++                        db.setCurrentShelf(sessionId,targetShelfId);
++                        if(currentSessionId==sessionId)currentShelfId=targetShelfId;
++                    }
++                    if(sources.contains(listShelfFilter))listShelfFilter=targetShelfId>0?targetShelfId:-1;
+                     shelfSelectionMode=false;selectedShelfIds.clear();
+                     Toast.makeText(this,deleteOnly?format(result.movedBooks)+"권을 미지정으로 이동하고 서가 "+result.removedShelves+"개를 삭제했습니다.":format(result.movedBooks)+"권을 '"+targetLabel+"'로 이동하고 서가 "+result.removedShelves+"개를 합쳤습니다.",Toast.LENGTH_LONG).show();
+                     showTab(TAB_SHELF);
